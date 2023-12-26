@@ -1,0 +1,34 @@
+diff --git a/images/clustermesh-apiserver/Dockerfile b/images/clustermesh-apiserver/Dockerfile
+index 1168686bcf..b088eb7c48 100644
+--- a/images/clustermesh-apiserver/Dockerfile
++++ b/images/clustermesh-apiserver/Dockerfile
+@@ -19,9 +19,17 @@ ARG NOOPT
+ ARG LOCKDEBUG
+ ARG RACE
+ 
++ENV GOEXPERIMENT=boringcrypto
++ENV GOARCH=amd64
++ENV CGO_ENABLED=1
++
+ WORKDIR /go/src/github.com/cilium/cilium/clustermesh-apiserver
++
+ RUN --mount=type=bind,readwrite,target=/go/src/github.com/cilium/cilium --mount=target=/root/.cache,type=cache --mount=target=/go/pkg,type=cache \
+-    mkdir -p /out/${TARGETOS}/${TARGETARCH} && cp etcd-config.yaml /out/${TARGETOS}/${TARGETARCH}/etcd-config.yaml
++    mkdir -p /out/${TARGETOS}/${TARGETARCH}
++
++COPY etcd-config.yaml /out/${TARGETOS}/${TARGETARCH}/etcd-config.yaml
++
+ RUN --mount=type=bind,readwrite,target=/go/src/github.com/cilium/cilium --mount=target=/root/.cache,type=cache --mount=target=/go/pkg,type=cache \
+     make GOARCH=${TARGETARCH} RACE=${RACE} NOSTRIP=${NOSTRIP} NOOPT=${NOOPT} LOCKDEBUG=${LOCKDEBUG} \
+     && mkdir -p /out/${TARGETOS}/${TARGETARCH}/usr/bin && mv clustermesh-apiserver /out/${TARGETOS}/${TARGETARCH}/usr/bin
+@@ -43,6 +51,10 @@ RUN apk --update add ca-certificates
+ # TARGETARCH
+ FROM --platform=${BUILDPLATFORM} ${GOLANG_IMAGE} as gops
+ 
++ENV GOEXPERIMENT=boringcrypto
++ENV GOARCH=amd64
++ENV CGO_ENABLED=1
++
+ # build-gops.sh will build both archs at the same time
+ WORKDIR /go/src/github.com/cilium/cilium/images/runtime
+ RUN apt-get update && apt-get install -y binutils-aarch64-linux-gnu binutils-x86-64-linux-gnu

@@ -7,12 +7,12 @@ REGISTRIES ?= docker.io/cilium
 
 PUSH ?= false
 
-OUTPUT := "type=image"
+OUTPUT := "load"
 ifeq ($(PUSH),true)
 OUTPUT := "type=registry,push=true"
 endif
 
-PLATFORMS=linux/amd64,linux/arm64
+PLATFORMS=linux/amd64
 
 all-images: lint runtime-image builder-image cilium-image operator-image hubble-relay-image
 

@@ -97,8 +97,8 @@ run_buildx() {
   build_args=(
     "--platform=${platform}"
     "--builder=${builder}"
-    "--target=release"
     "--file=${image_dir}/Dockerfile"
+    "--load"
   )
   if [ "${with_root_context}" = "false" ] ; then
     build_args+=("${image_dir}")
@@ -110,7 +110,7 @@ run_buildx() {
       exit 1
     fi
   fi
-  docker buildx build --output="${output}" "${tag_args[@]}" "${build_args[@]}"
+  docker buildx build "${tag_args[@]}" "${build_args[@]}"
 }
 
 if [ "${do_build}" = "true" ] ; then

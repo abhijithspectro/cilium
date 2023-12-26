@@ -19,6 +19,8 @@ ARG NOOPT
 ARG LOCKDEBUG
 ARG RACE
 
+ENV GOEXPERIMENT=boringcrypto
+
 WORKDIR /go/src/github.com/cilium/cilium/hubble-relay
 RUN --mount=type=bind,readwrite,target=/go/src/github.com/cilium/cilium --mount=target=/root/.cache,type=cache --mount=target=/go/pkg,type=cache \
     make GOARCH=${TARGETARCH} RACE=${RACE} NOSTRIP=${NOSTRIP} NOOPT=${NOOPT} LOCKDEBUG=${LOCKDEBUG} \
@@ -41,6 +43,7 @@ RUN apk --update add ca-certificates
 # TARGETARCH
 FROM --platform=${BUILDPLATFORM} ${GOLANG_IMAGE} as gops
 
+ENV GOEXPERIMENT=boringcrypto
 # build-gops.sh will build both archs at the same time
 WORKDIR /go/src/github.com/cilium/cilium/images/runtime
 RUN apt-get update && apt-get install -y binutils-aarch64-linux-gnu binutils-x86-64-linux-gnu

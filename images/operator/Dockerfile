@@ -13,20 +13,22 @@ FROM --platform=${BUILDPLATFORM} ${GOLANG_IMAGE} as builder
 # TARGETOS is an automatic platform ARG enabled by Docker BuildKit.
 ARG TARGETOS
 # TARGETARCH is an automatic platform ARG enabled by Docker BuildKit.
-ARG TARGETARCH
+ARG TARGETARCH=amd64
 ARG NOSTRIP
 ARG NOOPT
 ARG LOCKDEBUG
 ARG RACE
-ARG OPERATOR_VARIANT
+ARG OPERATOR_VARIANT=all
+
+ENV GOEXPERIMENT=boringcrypto
 
 WORKDIR /go/src/github.com/cilium/cilium/operator
 
 RUN --mount=type=bind,readwrite,target=/go/src/github.com/cilium/cilium \
     --mount=type=cache,target=/root/.cache \
     --mount=type=cache,target=/go/pkg \
-    make GOARCH=${TARGETARCH} RACE=${RACE} NOSTRIP=${NOSTRIP} NOOPT=${NOOPT} LOCKDEBUG=${LOCKDEBUG} cilium-${OPERATOR_VARIANT} \
-    && mkdir -p /out/${TARGETOS}/${TARGETARCH}/usr/bin && mv cilium-${OPERATOR_VARIANT} /out/${TARGETOS}/${TARGETARCH}/usr/bin
+    make GOARCH=${TARGETARCH} RACE=${RACE} NOSTRIP=${NOSTRIP} NOOPT=${NOOPT} LOCKDEBUG=${LOCKDEBUG} ${OPERATOR_VARIANT} \
+    && mkdir -p /out/${TARGETOS}/${TARGETARCH}/usr/bin && mv cilium-* /out/${TARGETOS}/${TARGETARCH}/usr/bin
 
 WORKDIR /go/src/github.com/cilium/cilium
 # licenses-all is a "script" that executes "go run" so its ARCH should be set
@@ -47,6 +49,9 @@ RUN apk --update add ca-certificates
 # TARGETARCH
 FROM --platform=${BUILDPLATFORM} ${GOLANG_IMAGE} as gops
 
+ENV GOEXPERIMENT=boringcrpyto
+ENV GOARCH=amd64
+ENV CGO_ENABLED=1
 # build-gops.sh will build both archs at the same time
 WORKDIR /go/src/github.com/cilium/cilium/images/runtime
 RUN apt-get update && apt-get install -y binutils-aarch64-linux-gnu binutils-x86-64-linux-gnu
@@ -60,11 +65,11 @@ FROM ${BASE_IMAGE} as release
 ARG TARGETOS
 # TARGETARCH is an automatic platform ARG enabled by Docker BuildKit.
 ARG TARGETARCH
-ARG OPERATOR_VARIANT
+ARG OPERATOR_VARIANT=generic
 LABEL maintainer="maintainer@cilium.io"
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=gops /out/${TARGETOS}/${TARGETARCH}/bin/gops /bin/gops
-COPY --from=builder /out/${TARGETOS}/${TARGETARCH}/usr/bin/cilium-${OPERATOR_VARIANT} /usr/bin/cilium-${OPERATOR_VARIANT}
+COPY --from=builder /out/${TARGETOS}/${TARGETARCH}/usr/bin/cilium-* /usr/bin/
 COPY --from=builder /out/${TARGETOS}/${TARGETARCH}/LICENSE.all /LICENSE.all
 WORKDIR /
 ENV GOPS_CONFIG_DIR=/

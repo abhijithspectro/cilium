@@ -19,6 +19,10 @@ ARG NOOPT
 ARG LOCKDEBUG
 ARG RACE
 
+ENV GOEXPERIMENT=boringcrypto
+ENV GOARCH=amd64
+ENV CGO_ENABLED=1
+
 WORKDIR /go/src/github.com/cilium/cilium/clustermesh-apiserver
 RUN --mount=type=bind,readwrite,target=/go/src/github.com/cilium/cilium --mount=target=/root/.cache,type=cache --mount=target=/go/pkg,type=cache \
     mkdir -p /out/${TARGETOS}/${TARGETARCH} && cp etcd-config.yaml /out/${TARGETOS}/${TARGETARCH}/etcd-config.yaml
@@ -42,6 +46,10 @@ RUN apk --update add ca-certificates
 # Represents the plataform where the build is happening, do not mix with
 # TARGETARCH
 FROM --platform=${BUILDPLATFORM} ${GOLANG_IMAGE} as gops
+
+ENV GOEXPERIMENT=boringcrypto
+ENV GOARCH=amd64
+ENV CGO_ENABLED=1
 
 # build-gops.sh will build both archs at the same time
 WORKDIR /go/src/github.com/cilium/cilium/images/runtime

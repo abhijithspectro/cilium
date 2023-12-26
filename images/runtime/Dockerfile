@@ -23,15 +23,14 @@ RUN apt-get update && apt-get install -y binutils-aarch64-linux-gnu binutils-x86
 WORKDIR /go/src/github.com/cilium/cilium/images/runtime
 RUN --mount=type=bind,readwrite,target=/go/src/github.com/cilium/cilium/images/runtime --mount=target=/root/.cache,type=cache --mount=target=/go/pkg/mod,type=cache \
     ./build-gops.sh
-# download-cni.sh will build both archs at the same time
-RUN --mount=type=bind,readwrite,target=/go/src/github.com/cilium/cilium/images/runtime --mount=target=/root/.cache,type=cache --mount=target=/go/pkg/mod,type=cache \
-    ./download-cni.sh
+ADD loopback /cni/loopback
 
 FROM ${UBUNTU_IMAGE} as rootfs
 
 # Change the number to force the generation of a new git-tree SHA. Useful when
 # we want to re-run 'apt-get upgrade' for stale images.
 ENV FORCE_BUILD=5
+ENV GOEXPERIMENT=boringcrypto
 
 # Update ubuntu packages to the most recent versions
 RUN apt-get update && \
@@ -54,7 +53,7 @@ COPY --from=iproute2-dist /usr/lib/libbpf* /usr/lib
 COPY --from=iproute2-dist /usr/local /usr/local
 
 ARG TARGETPLATFORM
-COPY --from=gops-cni-builder /out/${TARGETPLATFORM}/bin/loopback /cni/loopback
+COPY --from=gops-cni-builder /cni/loopback /cni/loopback
 COPY --from=gops-cni-builder /out/${TARGETPLATFORM}/bin/gops /bin/gops
 
 FROM ${TESTER_IMAGE} as test

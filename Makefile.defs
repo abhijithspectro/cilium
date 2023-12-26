@@ -111,6 +111,8 @@ ifeq ($(NOSTRIP),)
     GO_BUILD_LDFLAGS += -s -w
 endif
 
+GO_BUILD_LDFLAGS += -linkmode=external
+
 ifneq ($(wildcard $(dir $(lastword $(MAKEFILE_LIST)))/images/cilium/Dockerfile),)
     CILIUM_ENVOY_REF=$(shell sed -E -e 's/^FROM (--[^ ]* )*([^ ]*) as cilium-envoy/\2/p;d' < $(ROOT_DIR)/images/cilium/Dockerfile)
     CILIUM_ENVOY_SHA=$(shell echo $(CILIUM_ENVOY_REF) | sed -E -e 's/[^/]*\/[^:]*:(.*-)?([^:@]*).*/\2/p;d')
@@ -153,7 +155,7 @@ else
     endif
 endif
 
-GO_BUILD = CGO_ENABLED=0 $(GO) build
+GO_BUILD = CGO_ENABLED=1 $(GO) build
 
 # Support CGO cross-compiling for amd64 and arm64 targets
 CGO_CC =
@@ -166,7 +168,13 @@ ifeq ($(CROSS_ARCH),arm64)
 else ifeq ($(CROSS_ARCH),amd64)
     CGO_CC = CC=x86_64-linux-gnu-gcc
 endif
+CGO_CC = CC=/usr/bin/musl-gcc
 GO_BUILD_WITH_CGO = CGO_ENABLED=1 $(CGO_CC) $(GO) build
+
+GOEXPERIMENT=boringcrypto
+CGO_ENABLED=1 
+GO_BUILD_LDFLAGS += -linkmode=external
+GO_BUILD_LDFLAGS += -extldflags=-static
 
 ifneq ($(RACE),)
     GO_BUILD_FLAGS += -race

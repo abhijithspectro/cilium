@@ -3,9 +3,9 @@
 
 include ../Makefile.defs
 
-EXTRA_GO_BUILD_LDFLAGS = -extldflags -Wl,-soname,libcilium.so.$(VERSION_MAJOR)
+EXTRA_GO_BUILD_LDFLAGS =-extldflags -Wl,-static,-soname,libcilium.a.$(VERSION_MAJOR)
 
-TARGET := libcilium.so
+TARGET := libcilium.a
 
 .PHONY: all $(TARGET) clean install
 
@@ -13,7 +13,7 @@ all: $(TARGET)
 
 $(TARGET):
 	@$(ECHO_GO)
-	$(QUIET)$(GO_BUILD_WITH_CGO) -o $@.$(VERSION_MAJOR) -buildmode=c-shared
+	$(QUIET)$(GO_BUILD_WITH_CGO) -o $@.$(VERSION_MAJOR) -buildmode=c-archive
 	$(QUIET)ln -sf $@.$(VERSION_MAJOR) $@ || cp $@.$(VERSION_MAJOR) $@
 
 clean:
